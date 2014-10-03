@@ -1,50 +1,122 @@
-sudo mkdir /system
-sudo chown nick /system
-cd $HAIKU
-# FIXME patch gcc
-./configure --build-cross-tools x86 buildtools --no-downloads
-jam -j4 haiku-image
-mkdir -p /system/develop
-cp -r generated/cross-tools-x86 /system/develop/tools
-cp -r headers/{os,os/support,posix,libs/iconv,libs/ncurses}/* headers/config /system/develop/tools/i586-pc-haiku/include
-cp $(find generated/objects/haiku/x86/release/system/glue -name '*.o') /system/develop/tools/i586-pc-haiku/lib
-cp $(find generated/objects/haiku/x86/release -name libroot.so -or -name libiconv.a -or -name libncurses.a) /system/develop/tools/i586-pc-haiku/lib
+You will need:
+1. A Linux machine with GHC on.
+2. A Haiku machine without GHC on, running GCC 4.
+3. The GHC 7.8.3 source code.
+4. The Haiku source code.
 
-# FIXME extract and patch ghc
-perl boot
-./configure \
-  --prefix=/system/non-packaged/ghc-cross \
-  --target=i586-pc-haiku \
-  --with-gcc=/system/develop/tools/bin/i586-pc-haiku-gcc \
-  --with-ld=/system/develop/tools/bin/i586-pc-haiku-ld \
-  --with-ar=ar --with-nm=nm --with-ranlib=ranlib --with-objdump=objdump
-make
-# At this point the build script will try to run a Haiku version of
-# the dll-split program and will segfault
-rm -r utils/dll-split/dist-install
-Edit utils/dll-split/ghc.mk, and change the 1 in the last line (phase number) to 0
-make
-make install
-# The build system will helpfully install Linux versions of ghc-pkg
-# and unlit. Replace them with:
-inplace/bin/ghc-stage1 --make -iutils/ghc-pkg -iutils/ghc-pkg/dist/build Main -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/bin/ghc-pkg
-/system/develop/tools/bin/i586-pc-haiku-gcc -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/unlit utils/unlit/unlit.c
+Here is how I did it. This will give you a working Haiku version of
+GHC including GHCi etc., cross-compiled from your Linux machine.
 
-# Move into some temp directory.
-# Download some packages that we'll need:
-cabal update && cabal unpack transformers alex happy mtl primitive quickcheck random tf-random
-# Move those packages over to Haiku.
+Part 1: building a C cross-compiler for Haiku
+---------------------------------------------
 
-# Now, transfer /system/non-packaged/ghc-cross over to Haiku!
+We'll need to put the cross-compiler in /system/develop on the Linux
+machine, because that's where gcc lives on Haiku and they need to be
+in the same place (isn't it lovely!)
 
-# FIXME extract and patch ghc
-# FIXME any patches to be removed? (yes - part of build.mk)
-# Install the following packages:
-# gcc (etc.) ncurses_devel libiconv_devel gmp_devel perl python
-# Notice that you need the patched version of gcc!
+So:
 
-# cd wherever you put those packages
-for i in transformers mtl random primitive tf-random QuickCheck alex happy; do cd $i*; /system/non-packaged/ghc-cross/bin/i586-pc-haiku-ghc-7.8.3 --make Setup && ./Setup configure --prefix=/system/non-packaged/ghc-cross --with-ghc=/system/non-packaged/ghc-cross/bin/i586-pc-haiku-ghc-7.8.3 && ./Setup build && ./Setup install; cd ..; done
+$ sudo mkdir /system
+$ sudo chown your_user_name /system
 
-# extract ghc
-./configure --prefix=/system/non-packaged/ghc --with-ghc=/system/non-packaged/ghc-cross/bin/ghc-7.6.3 --with-alex=/system/non-packaged/ghc-cross/bin/alex --with-happy=/system/non-packaged/ghc-cross/bin/happy
+Next, we need to patch Haiku's gcc to fix a bug that the -r flag
+doesn't work. Go into the Haiku buildtools directory and apply the
+patch
+  gcc-patches/0001-Don-t-switch-on-shared-if-the-user-specifies-r.patch
+from this repository.
+
+Now build Haiku (probably some of this is unnecessary):
+
+$ cd wherever_haiku_is
+$ ./configure --build-cross-tools x86 wherever_buildtools_are
+$ jam -j4 haiku-image
+
+Now we'll take bits of the stuff that got built and turn them into a
+grotesque mutant cross-compiler:
+
+$ mkdir -p /system/develop
+$ cp -r generated/cross-tools-x86 /system/develop/tools
+$ cp -r headers/{os,os/support,posix,libs/iconv,libs/ncurses}/* headers/config /system/develop/tools/i586-pc-haiku/include
+$ cp $(find generated/objects/haiku/x86/release/system/glue -name '*.o') /system/develop/tools/i586-pc-haiku/lib
+$ cp $(find generated/objects/haiku/x86/release -name libroot.so -or -name libiconv.a -or -name libncurses.a) /system/develop/tools/i586-pc-haiku/lib
+
+Part 2: building GHC
+--------------------
+
+Extract GHC 7.8.3 and apply the two patches in the ghc-patches directory:
+  ghc-patches/0001-Haiku-patches.patch
+  ghc-patches/0002-Cross-compiling-patches.patch
+
+Try building it as follows:
+
+$ perl boot
+$ ./configure \
+    --prefix=/system/non-packaged/ghc-cross \
+    --target=i586-pc-haiku \
+    --with-gcc=/system/develop/tools/bin/i586-pc-haiku-gcc \
+    --with-ld=/system/develop/tools/bin/i586-pc-haiku-ld \
+    --with-ar=ar --with-nm=nm --with-ranlib=ranlib --with-objdump=objdump
+$ make
+
+This will work for a while but eventually the build script will try to
+run a Haiku-compiled version of one program, dll-split, which will
+segfault. Go into utils/dll-split/ghc.mk, and change the 1 in the last
+line (which is the phase when dll-split should be built) to a 0.
+Then run:
+
+$ rm -r utils/dll-split/dist-install
+$ make
+$ make install
+
+Now it will succeed! But 'make install' installs Linux versions of
+ghc-pkg and unlit by mistake. Replace them with Haiku versions by
+running:
+
+$ inplace/bin/ghc-stage1 --make -iutils/ghc-pkg -iutils/ghc-pkg/dist/build Main \
+    -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/bin/ghc-pkg
+$ /system/develop/tools/bin/i586-pc-haiku-gcc utils/unlit/unlit.c \
+    -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/unlit
+
+Now, just copy /system/non-packaged/ghc-cross over to Haiku!
+You will need the ncurses_devel and libiconv_devel packages installed.
+
+Lastly, go into the bin directory and make some nice symlinks, like
+linking i586-pc-haiku-ghc to ghc. The build script doesn't make enough
+and e.g. GHCi will only work once the right symlinks are there.
+Just make the obvious ones and everything should work!
+
+Part 3 not tested: building GHC on Haiku
+----------------------------------------
+
+It should also be possible to build GHC on Haiku.
+For this, you should apply the patch
+  ghc-patches/0001-Haiku-patches.patch
+but NOT the second, cross-compiling, patch.
+
+You will need to patch your gcc too with
+  gcc-patches/0001-Don-t-switch-on-shared-if-the-user-specifies-r.patch
+so that it supports -r.
+
+You will also need to install alex and happy, which have several
+dependencies. On the Linux machine, change into some temporary
+directory and run
+
+$ cabal update && cabal unpack transformers mtl primitive random tf-random quickcheck alex happy
+
+to download the packages, then copy them over to Haiku and
+finally add ghc to your path.
+Change into each package directory in turn, in the order above, and run
+
+$ ghc --make Setup && \
+  ./Setup configure --prefix=/system/non-packaged/ghc-cross && \
+  ./Setup build && \
+  ./Setup install
+
+After this, you ought to be able to build GHC with:
+
+$ ./configure --prefix=/system/non-packaged/ghc
+$ make
+$ make install
+
+and then go on to build Cabal, but as I don't have a patched gcc, I
+haven't tested it yet.
