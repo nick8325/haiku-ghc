@@ -1,0 +1,50 @@
+sudo mkdir /system
+sudo chown nick /system
+cd $HAIKU
+# FIXME patch gcc
+./configure --build-cross-tools x86 buildtools --no-downloads
+jam -j4 haiku-image
+mkdir -p /system/develop
+cp -r generated/cross-tools-x86 /system/develop/tools
+cp -r headers/{os,os/support,posix,libs/iconv,libs/ncurses}/* headers/config /system/develop/tools/i586-pc-haiku/include
+cp $(find generated/objects/haiku/x86/release/system/glue -name '*.o') /system/develop/tools/i586-pc-haiku/lib
+cp $(find generated/objects/haiku/x86/release -name libroot.so -or -name libiconv.a -or -name libncurses.a) /system/develop/tools/i586-pc-haiku/lib
+
+# FIXME extract and patch ghc
+perl boot
+./configure \
+  --prefix=/system/non-packaged/ghc-cross \
+  --target=i586-pc-haiku \
+  --with-gcc=/system/develop/tools/bin/i586-pc-haiku-gcc \
+  --with-ld=/system/develop/tools/bin/i586-pc-haiku-ld \
+  --with-ar=ar --with-nm=nm --with-ranlib=ranlib --with-objdump=objdump
+make
+# At this point the build script will try to run a Haiku version of
+# the dll-split program and will segfault
+rm -r utils/dll-split/dist-install
+Edit utils/dll-split/ghc.mk, and change the 1 in the last line (phase number) to 0
+make
+make install
+# The build system will helpfully install Linux versions of ghc-pkg
+# and unlit. Replace them with:
+inplace/bin/ghc-stage1 --make -iutils/ghc-pkg -iutils/ghc-pkg/dist/build Main -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/bin/ghc-pkg
+/system/develop/tools/bin/i586-pc-haiku-gcc -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/unlit utils/unlit/unlit.c
+
+# Move into some temp directory.
+# Download some packages that we'll need:
+cabal update && cabal unpack transformers alex happy mtl primitive quickcheck random tf-random
+# Move those packages over to Haiku.
+
+# Now, transfer /system/non-packaged/ghc-cross over to Haiku!
+
+# FIXME extract and patch ghc
+# FIXME any patches to be removed? (yes - part of build.mk)
+# Install the following packages:
+# gcc (etc.) ncurses_devel libiconv_devel gmp_devel perl python
+# Notice that you need the patched version of gcc!
+
+# cd wherever you put those packages
+for i in transformers mtl random primitive tf-random QuickCheck alex happy; do cd $i*; /system/non-packaged/ghc-cross/bin/i586-pc-haiku-ghc-7.8.3 --make Setup && ./Setup configure --prefix=/system/non-packaged/ghc-cross --with-ghc=/system/non-packaged/ghc-cross/bin/i586-pc-haiku-ghc-7.8.3 && ./Setup build && ./Setup install; cd ..; done
+
+# extract ghc
+./configure --prefix=/system/non-packaged/ghc --with-ghc=/system/non-packaged/ghc-cross/bin/ghc-7.6.3 --with-alex=/system/non-packaged/ghc-cross/bin/alex --with-happy=/system/non-packaged/ghc-cross/bin/happy
