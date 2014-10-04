@@ -1,13 +1,13 @@
-From ad35c7a1015f56bb1fc0efc368a506b426f4bd9c Mon Sep 17 00:00:00 2001
+From 67045eb4aaf8fc517bb58fbcc28a052132e484b0 Mon Sep 17 00:00:00 2001
 From: Nick Smallbone <nick.smallbone@gmail.com>
 Date: Fri, 3 Oct 2014 05:30:33 +0200
 Subject: [PATCH 2/2] Cross-compiling patches.
 
 ---
  ghc.mk               |   4 +-
- mk/build.mk          | 246 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ mk/build.mk          | 245 +++++++++++++++++++++++++++++++++++++++++++++++++++
  utils/ghctags/ghc.mk |   2 +-
- 3 files changed, 249 insertions(+), 3 deletions(-)
+ 3 files changed, 248 insertions(+), 3 deletions(-)
  create mode 100644 mk/build.mk
 
 diff --git a/ghc.mk b/ghc.mk
@@ -27,10 +27,10 @@ index 67d0cbd..b3bdf5d 100644
  INSTALLED_GHC_PKG_REAL=$(DESTDIR)$(bindir)/ghc-pkg.exe
 diff --git a/mk/build.mk b/mk/build.mk
 new file mode 100644
-index 0000000..0589d09
+index 0000000..baac3cd
 --- /dev/null
 +++ b/mk/build.mk
-@@ -0,0 +1,246 @@
+@@ -0,0 +1,245 @@
 +# -----------------------------------------------------------------------------
 +# A Sample build.mk
 +#
@@ -276,7 +276,6 @@ index 0000000..0589d09
 +# NoFib settings
 +NoFibWays =
 +STRIP_CMD = :
-+
 diff --git a/utils/ghctags/ghc.mk b/utils/ghctags/ghc.mk
 index cf8e9ad..c281ba1 100644
 --- a/utils/ghctags/ghc.mk
