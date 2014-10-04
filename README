@@ -82,8 +82,8 @@ linking i586-pc-haiku-ghc to ghc. The build script doesn't make enough
 and e.g. GHCi will only work once the right symlinks are there.
 Just make the obvious ones and everything should work!
 
-Part 3 not tested: building GHC on Haiku
-----------------------------------------
+Part 3 (not tested): building GHC on Haiku
+------------------------------------------
 
 It should also be possible to build GHC on Haiku.
 For this, you should apply the patch
@@ -111,5 +111,4 @@ $ ./configure --prefix=/system/non-packaged/ghc
 $ make
 $ make install
 
-and then go on to build Cabal, but as I don't have a patched gcc, I
-haven't tested it yet.
+and then go on to build Cabal. Untested!
