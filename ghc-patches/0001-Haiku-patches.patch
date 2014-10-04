@@ -1,4 +1,4 @@
-From d270d9fea50cc5ee02f8aab1fcb7d1e241016811 Mon Sep 17 00:00:00 2001
+From 230e8f5a3d91e250d35f2b326e950fa7046a17fd Mon Sep 17 00:00:00 2001
 From: Nick Smallbone <nick.smallbone@gmail.com>
 Date: Fri, 3 Oct 2014 05:06:50 +0200
 Subject: [PATCH 1/2] Haiku patches.
@@ -10,8 +10,8 @@ Subject: [PATCH 1/2] Haiku patches.
  libraries/unix/cbits/HsUnix.c                  |    2 +-
  rts/Linker.c                                   |    7 +-
  rts/haiku-elf.h                                | 3356 ++++++++++++++++++++++++
- utils/hp2ps/ghc.mk                             |    1 -
- 7 files changed, 3373 insertions(+), 44 deletions(-)
+ utils/hp2ps/ghc.mk                             |    2 +
+ 7 files changed, 3375 insertions(+), 43 deletions(-)
  create mode 100644 rts/haiku-elf.h
 
 diff --git a/compiler/main/DriverPipeline.hs b/compiler/main/DriverPipeline.hs
@@ -3510,14 +3510,16 @@ index 0000000..5657232
 +
 +#endif	/* elf.h */
 diff --git a/utils/hp2ps/ghc.mk b/utils/hp2ps/ghc.mk
-index 64a3a6d..7fdf23b 100644
+index 64a3a6d..cb9eef5 100644
 --- a/utils/hp2ps/ghc.mk
 +++ b/utils/hp2ps/ghc.mk
-@@ -15,7 +15,6 @@ utils/hp2ps_dist_C_SRCS          = AreaBelow.c Curves.c Error.c Main.c \
+@@ -15,7 +15,9 @@ utils/hp2ps_dist_C_SRCS          = AreaBelow.c Curves.c Error.c Main.c \
                                     HpFile.c Marks.c Scale.c TraceElement.c \
                                     Axes.c Dimensions.c Key.c PsFile.c Shade.c \
                                     Utilities.c
--utils/hp2ps_dist_EXTRA_LIBRARIES = m
++ifneq "$(BuildOS_CPP)" "haiku"
+ utils/hp2ps_dist_EXTRA_LIBRARIES = m
++endif
  utils/hp2ps_dist_PROGNAME        = $(CrossCompilePrefix)hp2ps
  utils/hp2ps_dist_INSTALL         = YES
  utils/hp2ps_dist_INSTALL_INPLACE = YES
