@@ -19,12 +19,6 @@ So:
 $ sudo mkdir /system
 $ sudo chown your_user_name /system
 
-Next, we need to patch Haiku's gcc to fix a bug that the -r flag
-doesn't work. Go into the Haiku buildtools directory and apply the
-patch
-  gcc-patches/0001-Don-t-switch-on-shared-if-the-user-specifies-r.patch
-from this repository.
-
 Now build Haiku (probably some of this is unnecessary):
 
 $ cd wherever_haiku_is
@@ -68,14 +62,17 @@ $ rm -r utils/dll-split/dist-install
 $ make
 $ make install
 
-Now it will succeed! But 'make install' installs Linux versions of
-ghc-pkg and unlit by mistake. Replace them with Haiku versions by
-running:
+Now it will succeed! But 'make install' installs a Linux version of
+unlit by mistake. Replace it with a Haiku version by running:
+
+$ /system/develop/tools/bin/i586-pc-haiku-gcc utils/unlit/unlit.c \
+    -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/unlit
+
+If you also end up with a Linux version of ghc-pkg (I did once but
+seemingly not any more), replace it by running:
 
 $ inplace/bin/ghc-stage1 --make -iutils/ghc-pkg -iutils/ghc-pkg/dist/build Main \
     -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/bin/ghc-pkg
-$ /system/develop/tools/bin/i586-pc-haiku-gcc utils/unlit/unlit.c \
-    -o /system/non-packaged/ghc-cross/lib/i586-pc-haiku-ghc-7.8.3/unlit
 
 Now, just copy /system/non-packaged/ghc-cross over to Haiku!
 You will need the ncurses_devel and libiconv_devel packages installed.
@@ -92,10 +89,6 @@ It should also be possible to build GHC on Haiku.
 For this, you should apply the patch
   ghc-patches/0001-Haiku-patches.patch
 but NOT the second, cross-compiling, patch.
-
-You will need to patch your gcc too with
-  gcc-patches/0001-Don-t-switch-on-shared-if-the-user-specifies-r.patch
-so that it supports -r.
 
 You will also need to install alex and happy, which have several
 dependencies. On the Linux machine, change into some temporary
