@@ -82,8 +82,8 @@ linking i586-pc-haiku-ghc to ghc. The build script doesn't make enough
 and e.g. GHCi will only work once the right symlinks are there.
 Just make the obvious ones and everything should work!
 
-Part 3 (not tested): building GHC on Haiku
-------------------------------------------
+Part 3: building GHC on Haiku
+-----------------------------
 
 Now let's build a self-hosted compiler on Haiku, the sane way.
 
