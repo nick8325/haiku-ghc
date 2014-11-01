@@ -85,30 +85,41 @@ Just make the obvious ones and everything should work!
 Part 3 (not tested): building GHC on Haiku
 ------------------------------------------
 
-It should also be possible to build GHC on Haiku.
-For this, you should apply the patch
+Now let's build a self-hosted compiler on Haiku, the sane way.
+
+Extract the GHC tarball on Haiku and apply the patch
   ghc-patches/0001-Haiku-patches.patch
 but NOT the second, cross-compiling, patch.
 
-You will also need to install alex and happy, which have several
-dependencies. On the Linux machine, change into some temporary
-directory and run
+Then just build - everything should work! Don't forget to use --prefix
+as /usr/local is not very Haiku-friendly.
 
-$ cabal update && cabal unpack transformers mtl primitive random tf-random quickcheck alex happy
+To get cabal-install running, you will need to build several packages
+by hand. At time of writing you need the following packages:
+  Cabal-1.20.0.2
+  cabal-install-1.20.0.3
+  HTTP-4000.2.18
+  mtl-2.2.1
+  network-2.5.0.0
+  parsec-3.1.7
+  random-1.0.1.3
+  stm-2.4.3
+  text-1.2.0.0
+  transformers-0.4.1.0
+  zlib-0.5.4.1
 
-to download the packages, then copy them over to Haiku and
-finally add ghc to your path.
-Change into each package directory in turn, in the order above, and run
+Fetch these on a machine with a working cabal-install by using cabal
+unpack, then transfer them over to Haiku. Note, some of these packages
+are not the latest version, so include the version number when running
+cabal unpack!
 
-$ ghc --make Setup && \
-  ./Setup configure --prefix=/system/non-packaged/ghc-cross && \
-  ./Setup build && \
-  ./Setup install
+The network package fails to build on Haiku. Apply the patch
+network.patch from this repository.
 
-After this, you ought to be able to build GHC with:
-
-$ ./configure --prefix=/system/non-packaged/ghc
-$ make
-$ make install
-
-and then go on to build Cabal. Untested!
+Then build and install each package with
+  runghc Setup.lhs configure --prefix=$PREFIX
+  runghc Setup.lhs build
+  runghc Setup.lhs install
+where $PREFIX is wherever you chose to install GHC - make sure to
+specify it, otherwise Cabal will default to /usr/local.
+Hopefully it will work!
