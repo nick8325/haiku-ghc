@@ -1,4 +1,4 @@
-From d9507576b85394fdfa54f21dab7634cfadb82e89 Mon Sep 17 00:00:00 2001
+From ab33990b0b2dea8725b8ea4b4d89b2f53dfdfdd3 Mon Sep 17 00:00:00 2001
 From: Nick Smallbone <nick.smallbone@gmail.com>
 Date: Fri, 3 Oct 2014 05:30:33 +0200
 Subject: [PATCH 2/2] Cross-compiling patches.
@@ -287,5 +287,5 @@ index cf8e9ad..c281ba1 100644
 -$(eval $(call build-prog,utils/ghctags,dist-install,2))
 +$(eval $(call build-prog,utils/ghctags,dist-install,1))
 -- 
-2.1.2
+2.1.3
 

@@ -1,4 +1,4 @@
-From 4a2da91df349349ef0fa0303da380ec0ed24d595 Mon Sep 17 00:00:00 2001
+From 8c3f75c6fffcc8598204c4a39317afb4b536e12d Mon Sep 17 00:00:00 2001
 From: Nick Smallbone <nick.smallbone@gmail.com>
 Date: Fri, 3 Oct 2014 05:06:50 +0200
 Subject: [PATCH 1/2] Haiku patches.
@@ -11,8 +11,10 @@ Subject: [PATCH 1/2] Haiku patches.
  rts/Linker.c                                   |    7 +-
  rts/haiku-elf.h                                | 3356 ++++++++++++++++++++++++
  rts/posix/Itimer.c                             |    2 +-
+ rts/posix/OSMem.c                              |    2 +
+ rules/library-path.mk                          |    2 +
  utils/hp2ps/ghc.mk                             |    4 +-
- 8 files changed, 3377 insertions(+), 45 deletions(-)
+ 10 files changed, 3381 insertions(+), 45 deletions(-)
  create mode 100644 rts/haiku-elf.h
 
 diff --git a/compiler/main/DriverPipeline.hs b/compiler/main/DriverPipeline.hs
@@ -3523,6 +3525,32 @@ index 4bcc3a1..0ba01fc 100644
  /* USE_TIMER_CREATE is usually disabled for Solaris. In fact it is
     supported well on this OS, but requires additional privilege. When
     user does not have it, then the testing configure program fails
+diff --git a/rts/posix/OSMem.c b/rts/posix/OSMem.c
+index 69140a9..bbc6859 100644
+--- a/rts/posix/OSMem.c
++++ b/rts/posix/OSMem.c
+@@ -137,6 +137,8 @@ my_mmap (void *addr, W_ size)
+ #else
+     ret = mmap(addr, size, PROT_READ | PROT_WRITE,
+                MAP_ANON | MAP_PRIVATE, -1, 0);
++    if (ret == (void *)-1 && errno == EFAULT)
++        ret = mmap(0, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+ #endif
+
+     if (ret == (void *)-1) {
+diff --git a/rules/library-path.mk b/rules/library-path.mk
+index 5dd5588..12a160c 100644
+--- a/rules/library-path.mk
++++ b/rules/library-path.mk
+@@ -15,6 +15,8 @@ ifeq "$(TargetOS_CPP)" "mingw32"
+ prependLibraryPath = $(error Do not know how to prependLibraryPath on Windows)
+ else ifeq "$(TargetOS_CPP)" "darwin"
+ prependLibraryPath = export DYLD_LIBRARY_PATH="$1:$$DYLD_LIBRARY_PATH"
++else ifeq "$(TargetOS_CPP)" "haiku"
++prependLibraryPath = export LIBRARY_PATH="$1:$$LIBRARY_PATH"
+ else
+ prependLibraryPath = export LD_LIBRARY_PATH="$1:$$LD_LIBRARY_PATH"
+ endif
 diff --git a/utils/hp2ps/ghc.mk b/utils/hp2ps/ghc.mk
 index 64a3a6d..70df2fa 100644
 --- a/utils/hp2ps/ghc.mk
@@ -3544,5 +3572,5 @@ index 64a3a6d..70df2fa 100644
 +$(eval $(call build-prog,utils/hp2ps,dist,1))
 
 -- 
-2.1.2
+2.1.3
 
